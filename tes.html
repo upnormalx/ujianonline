@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tes Koneksi</title>
+<style>body{font-family:Arial;max-width:640px;margin:30px auto;padding:0 16px}
+.r{padding:10px 14px;margin:8px 0;border-radius:8px;border:1px solid #ccc}
+.ok{background:#dcfce7;border-color:#16a34a}.no{background:#fee2e2;border-color:#dc2626}
+pre{white-space:pre-wrap;word-break:break-all;font-size:12px}</style></head>
+<body>
+<h2>Tes Koneksi Ujian Online</h2>
+<div id="hasil">Memeriksa...</div>
+<script>
+const out = document.getElementById('hasil'); out.innerHTML = '';
+function tulis(ok, teks){ out.innerHTML += '<div class="r '+(ok?'ok':'no')+'">'+(ok?'✅ ':'❌ ')+teks+'</div>'; }
+async function ada(file){ try{ const r = await fetch(file,{cache:'no-store'}); return r.ok; }catch(e){ return false; } }
+(async () => {
+  for (const f of ['index.html','style.css','config.js','api.js','utils.js','login.html','dashboard.html','admin-hasil.html']) {
+    tulis(await ada(f), 'File ' + f + ((await ada(f)) ? ' ada' : ' TIDAK DITEMUKAN (belum terupload / salah nama)'));
+  }
+  const s = document.createElement('script'); s.src = 'config.js';
+  s.onload = async () => {
+    tulis(typeof CONFIG !== 'undefined', 'config.js terbaca');
+    try {
+      const r = await fetch(CONFIG.APPS_SCRIPT_URL + '?action=getKelas', {redirect:'follow'});
+      const t = await r.text();
+      let j = null; try { j = JSON.parse(t); } catch(e){}
+      if (j && j.status === 'success') {
+        tulis(true, 'Apps Script OK. Kelas ditemukan: <b>' + (j.data.length ? j.data.join(', ') : '(kosong - jalankan setupSpreadsheet)') + '</b>');
+      } else {
+        tulis(false, 'Apps Script bermasalah. Jawaban server:<pre>' + t.substring(0,400).replace(/</g,'&lt;') + '</pre>Biasanya: akses belum "Siapa saja" / belum Versi baru.');
+      }
+    } catch(e) { tulis(false, 'Tidak bisa menghubungi Apps Script: ' + e.message + '<br>Periksa URL di config.js dan akses "Siapa saja".'); }
+  };
+  s.onerror = () => tulis(false, 'config.js gagal dimuat');
+  document.body.appendChild(s);
+})();
+</script></body></html>
